@@ -9,21 +9,34 @@ import {
 import { Server } from 'ws';
 import { AuthService } from 'src/services/auth.service';
 import { isEmpty } from 'lodash';
+import { Logger } from '@nestjs/common';
 
 @WebSocketGateway()
 export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(private authService: AuthService) {}
-  @WebSocketServer()
-  server: Server;
+  @WebSocketServer() server: Server;
+  private logger: Logger = new Logger('EventsGateway');
 
   handleConnection(client: any): void {}
 
   handleDisconnect(client: any): void {}
 
-  broadcast(data) {
-    this.server.clients.forEach((client: any) => {
-      if (client.isAuthenticated && client.appId === data.appId) client.send(data.message);
-    });
+  broadcast(data: any) {
+    switch (data.message) {
+      case 'appDefinitionChanged':
+      case 'updatePresense':
+        this.server.clients.forEach((client: any) => {
+          if (client.isAuthenticated && client.appId === data.appId && client.id !== data.clientId)
+            client.send(JSON.stringify(data));
+        });
+        break;
+
+      default:
+        this.server.clients.forEach((client: any) => {
+          if (client.isAuthenticated && client.appId === data.appId) client.send(data.message);
+        });
+        break;
+    }
   }
 
   @SubscribeMessage('authenticate')
@@ -36,7 +49,26 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('subscribe')
   onSubscribeEvent(client: any, data: string) {
-    client.appId = data;
+    const _data = JSON.parse(data);
+    client.appId = _data.appId;
+    client.id = _data.clientId;
+    client.meta = _data.meta;
+    _data.message = 'updatePresense';
+    this.broadcast(_data);
+    return;
+  }
+
+  @SubscribeMessage('updatePresense')
+  onUpdatePresenseEvent(_: any, data: string) {
+    const _data = JSON.parse(data);
+    this.broadcast(_data);
+    return;
+  }
+
+  @SubscribeMessage('appDefinitionChanged')
+  onAppDefinitionChangedEvent(_: any, data: string) {
+    const _data = JSON.parse(data);
+    this.broadcast(_data);
     return;
   }
 
