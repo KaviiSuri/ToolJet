@@ -9,7 +9,7 @@ import { createWebsocketConnection } from '@/_helpers/websocketConnection';
 const MultiplayerEditor = (props) => {
   const { socket } = React.useMemo(() => createWebsocketConnection(props.match.params.id), [props.match.params.id]);
 
-  const { updatePresence } = useSelf(socket, props.match.params.id);
+  const updatePresence = useSelf(socket, props.match.params.id);
 
   const others = useOthers(socket);
 

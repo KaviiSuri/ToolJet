@@ -1,5 +1,6 @@
 import React from 'react';
 import { generateRandomHslColor } from '@/_helpers/generateHSLAColors';
+import { throttle } from 'lodash';
 
 export function useSelf(socket, appId) {
   const currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -10,30 +11,26 @@ export function useSelf(socket, appId) {
     color: generateRandomHslColor(),
   });
 
-  const updatePresence = React.useCallback(
-    (overrides) => {
-      const updatedPresence = Object.assign({}, self, overrides);
-      setSelf(updatedPresence);
+  const throttled = throttle((overrides) => {
+    const updatedPresence = Object.assign({}, self, overrides);
+    setSelf(updatedPresence);
 
-      const socketData = {
-        clientId: currentUser.id,
-        appId,
-        meta: updatedPresence,
-        message: 'updatePresense',
-      };
+    const socketData = {
+      clientId: currentUser.id,
+      appId,
+      meta: updatedPresence,
+      message: 'updatePresense',
+    };
 
-      socket.send(
-        JSON.stringify({
-          event: 'updatePresense',
-          data: JSON.stringify(socketData),
-        })
-      );
-    },
-    [appId, currentUser.id, self, socket]
-  );
+    socket.send(
+      JSON.stringify({
+        event: 'updatePresense',
+        data: JSON.stringify(socketData),
+      })
+    );
+  }, 4000);
 
-  return {
-    self,
-    updatePresence,
-  };
+  const updatePresence = React.useCallback((overrides) => throttled(overrides), [throttled]);
+
+  return updatePresence;
 }
