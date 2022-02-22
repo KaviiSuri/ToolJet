@@ -15,10 +15,13 @@ const MultiplayerEditor = (props) => {
 
   const handlePointerMove = React.useCallback(
     (e) => {
-      updatePresence({
-        x: e.pageX / document.documentElement.clientWidth,
-        y: e.pageY / document.documentElement.clientHeight,
-      });
+      const element = document.getElementById('real-canvas');
+      if (element.parentNode.matches(':hover')) {
+        updatePresence({
+          x: e.pageX / document.documentElement.clientWidth,
+          y: e.pageY / document.documentElement.clientHeight,
+        });
+      }
     },
     [updatePresence]
   );
@@ -40,7 +43,7 @@ const MultiplayerEditor = (props) => {
     () => socket && socket?.close();
   }, [socket]);
 
-  console.log(doc);
+  console.log(JSON.parse(JSON.stringify(doc)));
 
   return (
     <div onPointerMove={handlePointerMove}>

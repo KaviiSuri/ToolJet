@@ -509,6 +509,7 @@ class Editor extends React.Component {
   };
 
   appDefinitionChanged = (newDefinition, opts = {}) => {
+    if (isEqual(this.state.appDefinition, newDefinition)) return;
     produce(
       this.state.appDefinition,
       (draft) => {
@@ -520,21 +521,7 @@ class Editor extends React.Component {
     this.setState({ appDefinition: newDefinition }, () => {
       if (!opts.skipAutoSave) this.autoSave();
 
-      const socketData = {
-        data: JSON.stringify(
-          this.props.updateDoc((draft) => {
-            draft.newDoc = newDefinition;
-          })
-        ),
-        message: 'appDefinitionChanged',
-      };
-
-      this.socket.send(
-        JSON.stringify({
-          event: 'appDefinitionChanged',
-          data: JSON.stringify(socketData),
-        })
-      );
+      this.emitAppDefinitionChanged(newDefinition);
     });
     computeComponentState(this, newDefinition.components);
   };
@@ -591,7 +578,26 @@ class Editor extends React.Component {
     }
   };
 
+  emitAppDefinitionChanged = (appDefinition) => {
+    const socketData = {
+      data: JSON.stringify(
+        this.props.updateDoc((draft) => {
+          draft.newDoc = appDefinition;
+        })
+      ),
+      message: 'appDefinitionChanged',
+    };
+
+    this.socket.send(
+      JSON.stringify({
+        event: 'appDefinitionChanged',
+        data: JSON.stringify(socketData),
+      })
+    );
+  };
+
   componentDefinitionChanged = (componentDefinition) => {
+    if (isEqual(this.state.appDefinition[componentDefinition.id].component, componentDefinition.component)) return;
     let _self = this;
 
     const newDefinition = {
@@ -608,21 +614,7 @@ class Editor extends React.Component {
       this.handleAddPatch
     );
 
-    const socketData = {
-      data: JSON.stringify(
-        this.props.updateDoc((draft) => {
-          draft.newDoc = newDefinition;
-        })
-      ),
-      message: 'appDefinitionChanged',
-    };
-
-    this.socket.send(
-      JSON.stringify({
-        event: 'appDefinitionChanged',
-        data: JSON.stringify(socketData),
-      })
-    );
+    this.emitAppDefinitionChanged(newDefinition);
 
     return setStateAsync(_self, newDefinition);
   };
@@ -944,7 +936,7 @@ class Editor extends React.Component {
         enforceFocus={false}
         animation={false}
         centered={true}
-        // eslint-disable-next-line no-undef
+      // eslint-disable-next-line no-undef
       >
         <Modal.Header>
           <Modal.Title>Create Version</Modal.Title>
@@ -1396,8 +1388,8 @@ class Editor extends React.Component {
               {currentSidebarTab === 1 && (
                 <div className="pages-container">
                   {selectedComponent &&
-                  !isEmpty(appDefinition.components) &&
-                  !isEmpty(appDefinition.components[selectedComponent.id]) ? (
+                    !isEmpty(appDefinition.components) &&
+                    !isEmpty(appDefinition.components[selectedComponent.id]) ? (
                     <Inspector
                       cloneComponent={this.cloneComponent}
                       componentDefinitionChanged={this.componentDefinitionChanged}
