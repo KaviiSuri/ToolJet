@@ -11,12 +11,12 @@ const MultiplayerEditor = (props) => {
 
   const updatePresence = useSelf(socket, props.match.params.id);
 
-  const others = useOthers(socket);
+  const others = useOthers(socket, props.match.params.id);
 
   const handlePointerMove = React.useCallback(
     (e) => {
       const element = document.getElementById('real-canvas');
-      if (element.parentNode.matches(':hover')) {
+      if (element?.parentNode?.matches(':hover')) {
         updatePresence({
           x: e.pageX / document.documentElement.clientWidth,
           y: e.pageY / document.documentElement.clientHeight,
@@ -26,14 +26,14 @@ const MultiplayerEditor = (props) => {
     [updatePresence]
   );
 
-  const [doc, updateDoc, merge] = useAutomerge({});
+  const [doc, updateDoc, merge] = useAutomerge({}, socket);
 
   React.useEffect(() => {
     socket?.addEventListener('message', (event) => {
       const data = JSON.parse(event.data);
       if (data.message === 'appDefinitionChanged') {
         try {
-          merge(data.newDoc);
+          merge(data.data);
         } catch (error) {
           console.log(error);
         }
@@ -41,7 +41,7 @@ const MultiplayerEditor = (props) => {
     });
 
     () => socket && socket?.close();
-  }, [socket]);
+  }, [merge, socket]);
 
   console.log(JSON.parse(JSON.stringify(doc)));
 

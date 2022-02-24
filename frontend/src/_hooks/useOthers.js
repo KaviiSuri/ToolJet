@@ -1,8 +1,7 @@
 import React from 'react';
-import { throttle } from 'lodash';
+
 export function useOthers(socket) {
   const [users, setUsers] = React.useState({});
-  var throttled = throttle((_users) => console.log(_users), 4000);
 
   React.useEffect(() => {
     socket?.addEventListener('message', (event) => {
