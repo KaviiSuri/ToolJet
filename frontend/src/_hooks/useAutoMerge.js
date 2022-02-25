@@ -1,6 +1,7 @@
 import React from 'react';
 import Automerge from 'automerge';
 import { throttle } from 'lodash';
+const worker = new Worker('../_workers/automerge-worker.js');
 
 export function useAutomerge(initialDoc, socket, appId) {
   const [doc, setDoc] = React.useState(() =>
@@ -9,8 +10,10 @@ export function useAutomerge(initialDoc, socket, appId) {
 
   const throttled = throttle((updater, message) => {
     try {
+      console.log('-----start diff calculation----- ');
       const newDoc = Automerge.change(doc, message, updater);
       const changes = Automerge.getChanges(doc, newDoc);
+      console.log('-----start diff calculation-----');
 
       const socketData = {
         data: changes,
@@ -32,7 +35,10 @@ export function useAutomerge(initialDoc, socket, appId) {
     }
   }, 4000);
 
-  const updateDoc = React.useCallback((updater, message) => throttled(updater, message), [throttled]);
+  const updateDoc = React.useCallback(
+    (updater, message) => worker.postMessage(throttled(updater, message)),
+    [throttled]
+  );
 
   const mergeDoc = React.useCallback(
     (updatedDoc) => {

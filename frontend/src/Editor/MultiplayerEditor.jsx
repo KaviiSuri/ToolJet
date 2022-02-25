@@ -43,7 +43,7 @@ const MultiplayerEditor = (props) => {
     () => socket && socket?.close();
   }, [merge, socket]);
 
-  console.log(JSON.parse(JSON.stringify(doc)));
+  // console.log(JSON.parse(JSON.stringify(doc)));
 
   return (
     <div onPointerMove={handlePointerMove}>
