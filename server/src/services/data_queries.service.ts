@@ -7,6 +7,8 @@ import { DataQuery } from '../../src/entities/data_query.entity';
 import { CredentialsService } from './credentials.service';
 import { DataSource } from 'src/entities/data_source.entity';
 import { DataSourcesService } from './data_sources.service';
+import { AuditLoggerService } from './audit_logger.service';
+import { ActionTypes, ResourceTypes } from 'src/entities/audit_log.entity';
 const got = require('got');
 
 @Injectable()
@@ -15,7 +17,8 @@ export class DataQueriesService {
     private credentialsService: CredentialsService,
     private dataSourcesService: DataSourcesService,
     @InjectRepository(DataQuery)
-    private dataQueriesRepository: Repository<DataQuery>
+    private dataQueriesRepository: Repository<DataQuery>,
+    private auditLoggerService: AuditLoggerService
   ) {}
 
   async findOne(dataQueryId: string): Promise<DataQuery> {
@@ -81,7 +84,8 @@ export class DataQueriesService {
     return { service, sourceOptions, parsedQueryOptions };
   }
 
-  async runQuery(user: User, dataQuery: any, queryOptions: object): Promise<object> {
+  async runQuery(request: any, dataQuery: any, queryOptions: object): Promise<object> {
+    const user = request.user;
     const dataSource = dataQuery.dataSource?.id ? dataQuery.dataSource : {};
     let { sourceOptions, parsedQueryOptions, service } = await this.fetchServiceAndParsedParams(
       dataSource,
@@ -91,7 +95,7 @@ export class DataQueriesService {
     let result;
 
     try {
-      return await service.run(sourceOptions, parsedQueryOptions, dataSource.id, dataSource.updatedAt);
+      result = await service.run(sourceOptions, parsedQueryOptions, dataSource.id, dataSource.updatedAt);
     } catch (error) {
       if (error.constructor.name === 'OAuthUnauthorizedClientError') {
         console.log('Access token expired. Attempting refresh token flow.');
@@ -110,6 +114,19 @@ export class DataQueriesService {
       } else {
         throw error;
       }
+    }
+
+    if (user) {
+      await this.auditLoggerService.perform({
+        request,
+        userId: user.id,
+        organizationId: user.organizationId,
+        resourceId: dataQuery?.id,
+        resourceName: dataQuery?.name,
+        resourceType: ResourceTypes.DATA_QUERY,
+        actionType: ActionTypes.DATA_QUERY_RUN,
+        metadata: { parsedQueryOptions },
+      });
     }
 
     return result;

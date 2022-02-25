@@ -3,7 +3,7 @@ import { Router, Route } from 'react-router-dom';
 import { history } from '@/_helpers';
 import { authenticationService, tooljetService } from '@/_services';
 import { PrivateRoute } from '@/_components';
-import { HomePage } from '@/HomePage';
+import { HomePage, Library } from '@/HomePage';
 import { LoginPage } from '@/LoginPage';
 import { SignupPage } from '@/SignupPage';
 import { InvitationPage } from '@/InvitationPage';
@@ -16,6 +16,7 @@ import 'emoji-mart/css/emoji-mart.css';
 import { ManageGroupPermissions } from '@/ManageGroupPermissions';
 import { ManageOrgUsers } from '@/ManageOrgUsers';
 import { ManageGroupPermissionResources } from '@/ManageGroupPermissionResources';
+import { AuditLogs } from '@/AuditLogs';
 import { SettingsPage } from '../SettingsPage/SettingsPage';
 import { OnboardingModal } from '@/Onboarding/OnboardingModal';
 import { ForgotPassword } from '@/ForgotPassword';
@@ -166,6 +167,20 @@ class App extends React.Component {
               exact
               path="/groups/:id"
               component={ManageGroupPermissionResources}
+              switchDarkMode={this.switchDarkMode}
+              darkMode={darkMode}
+            />
+            <PrivateRoute
+              exact
+              path="/library"
+              component={Library}
+              switchDarkMode={this.switchDarkMode}
+              darkMode={darkMode}
+            />
+            <PrivateRoute
+              exact
+              path="/audit_logs"
+              component={AuditLogs}
               switchDarkMode={this.switchDarkMode}
               darkMode={darkMode}
             />

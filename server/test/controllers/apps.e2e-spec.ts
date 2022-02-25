@@ -22,6 +22,7 @@ import { GroupPermission } from 'src/entities/group_permission.entity';
 import { AppGroupPermission } from 'src/entities/app_group_permission.entity';
 import { Folder } from 'src/entities/folder.entity';
 import { FolderApp } from 'src/entities/folder_app.entity';
+import { AuditLog } from 'src/entities/audit_log.entity';
 import { Credential } from 'src/entities/credential.entity';
 
 describe('apps controller', () => {
@@ -62,12 +63,6 @@ describe('apps controller', () => {
           organization,
         });
 
-        const application = await createApplication(app, {
-          name: 'name',
-          user: adminUserData.user,
-        });
-        await createApplicationVersion(app, application);
-
         for (const userData of [viewerUserData, developerUserData]) {
           const response = await request(app.getHttpServer())
             .post(`/api/apps`)
@@ -82,6 +77,18 @@ describe('apps controller', () => {
 
         expect(response.statusCode).toBe(201);
         expect(response.body.name).toBe('Untitled app');
+
+        // should create audit log
+        const auditLog = await AuditLog.findOne({
+          userId: adminUserData.user.id,
+        });
+
+        expect(auditLog.organizationId).toEqual(adminUserData.user.organizationId);
+        expect(auditLog.resourceId).toEqual(response.body.id);
+        expect(auditLog.resourceType).toEqual('APP');
+        expect(auditLog.resourceName).toEqual(response.body.name);
+        expect(auditLog.actionType).toEqual('APP_CREATE');
+        expect(auditLog.createdAt).toBeDefined();
       });
     });
 
@@ -422,6 +429,18 @@ describe('apps controller', () => {
       const clonedApplication = await App.findOne({ where: { id: appId } });
       expect(clonedApplication.name).toBe('App to clone');
 
+      // should create audit log
+      const auditLog = await AuditLog.findOne({
+        userId: adminUserData.user.id,
+      });
+
+      expect(auditLog.organizationId).toEqual(adminUserData.user.organizationId);
+      expect(auditLog.resourceId).toEqual(clonedApplication.id);
+      expect(auditLog.resourceType).toEqual('APP');
+      expect(auditLog.resourceName).toEqual(clonedApplication.name);
+      expect(auditLog.actionType).toEqual('APP_CLONE');
+      expect(auditLog.createdAt).toBeDefined();
+
       response = await request(app.getHttpServer())
         .post(`/api/apps/${application.id}/clone`)
         .set('Authorization', authHeaderForUser(developerUserData.user));
@@ -465,6 +484,7 @@ describe('apps controller', () => {
       });
       const application = await createApplication(app, {
         user: adminUserData.user,
+        name: 'old name',
       });
 
       const response = await request(app.getHttpServer())
@@ -475,6 +495,21 @@ describe('apps controller', () => {
       expect(response.statusCode).toBe(200);
       await application.reload();
       expect(application.name).toBe('new name');
+
+      // should create audit log
+      const auditLog = await AuditLog.findOne({
+        userId: adminUserData.user.id,
+      });
+
+      expect(auditLog.organizationId).toEqual(adminUserData.user.organizationId);
+      expect(auditLog.resourceId).toEqual(application.id);
+      expect(auditLog.resourceType).toEqual('APP');
+      expect(auditLog.resourceName).toEqual('old name');
+      expect(auditLog.actionType).toEqual('APP_UPDATE');
+      expect(auditLog.metadata).toEqual({
+        updateParams: { app: { name: 'new name' } },
+      });
+      expect(auditLog.createdAt).toBeDefined();
     });
 
     it('should not be able to update name of the app if admin of another organization', async () => {
@@ -1223,6 +1258,19 @@ describe('apps controller', () => {
 
         expect(response.statusCode).toBe(200);
       }
+
+      // should create audit log
+      expect(await AuditLog.count()).toEqual(3);
+      const auditLog = await AuditLog.findOne({
+        userId: adminUserData.user.id,
+      });
+
+      expect(auditLog.organizationId).toEqual(adminUserData.user.organizationId);
+      expect(auditLog.resourceId).toEqual(application.id);
+      expect(auditLog.resourceType).toEqual('APP');
+      expect(auditLog.resourceName).toEqual(application.name);
+      expect(auditLog.actionType).toEqual('APP_VIEW');
+      expect(auditLog.createdAt).toBeDefined();
     });
 
     it('should not be able to fetch app using slug if member of another organization', async () => {
@@ -1263,6 +1311,12 @@ describe('apps controller', () => {
       const response = await request(app.getHttpServer()).get('/api/apps/slugs/foo');
 
       expect(response.statusCode).toBe(200);
+
+      // Audit log not created for public app viewed
+      const auditLog = await AuditLog.findOne({
+        userId: adminUserData.user.id,
+      });
+      expect(auditLog).toBeUndefined();
     });
   });
 
@@ -1321,6 +1375,18 @@ describe('apps controller', () => {
         expect(response.body.isPublic).toBe(application.isPublic);
         expect(response.body.organizationId).toBe(application.organizationId);
       }
+
+      // should create audit log
+      const auditLog = await AuditLog.findOne({
+        userId: adminUserData.user.id,
+      });
+
+      expect(auditLog.organizationId).toEqual(adminUserData.user.organizationId);
+      expect(auditLog.resourceId).toEqual(application.id);
+      expect(auditLog.resourceType).toEqual('APP');
+      expect(auditLog.resourceName).toEqual(application.name);
+      expect(auditLog.actionType).toEqual('APP_EXPORT');
+      expect(auditLog.createdAt).toBeDefined();
     });
 
     it('should not be able to export app if member of another organization', async () => {
@@ -1407,6 +1473,18 @@ describe('apps controller', () => {
       });
 
       expect(importedApp).toHaveLength(1);
+
+      // should create audit log
+      const auditLog = await AuditLog.findOne({
+        userId: adminUserData.user.id,
+      });
+
+      expect(auditLog.organizationId).toEqual(adminUserData.user.organizationId);
+      expect(auditLog.resourceId).toEqual(importedApp[0].id);
+      expect(auditLog.resourceType).toEqual('APP');
+      expect(auditLog.resourceName).toEqual(importedApp[0].name);
+      expect(auditLog.actionType).toEqual('APP_IMPORT');
+      expect(auditLog.createdAt).toBeDefined();
     });
   });
 

@@ -71,6 +71,42 @@ describe('users controller', () => {
     });
   });
 
+  describe('GET /api/users', () => {
+    it('should allow admins to fetch all users in an organization', async () => {
+      const adminUserData = await createUser(app, {
+        email: 'admin@tooljet.io',
+        groups: ['all_users', 'admin'],
+      });
+      const adminUser = adminUserData.user;
+      const organization = adminUserData.organization;
+      const defaultUserData = await createUser(app, {
+        email: 'developer@tooljet.io',
+        groups: ['all_users'],
+        organization,
+      });
+      const defaultUser = defaultUserData.user;
+
+      let response = await request(app.getHttpServer())
+        .get('/api/users/')
+        .set('Authorization', authHeaderForUser(adminUser));
+
+      expect(response.statusCode).toBe(200);
+
+      const users = response.body.users;
+
+      expect(users).toHaveLength(2);
+      expect(Object.keys(users[0]).sort()).toEqual(
+        ['email', 'first_name', 'id', 'last_name', 'organization_users'].sort()
+      );
+
+      response = await request(app.getHttpServer())
+        .get('/api/users/')
+        .set('Authorization', authHeaderForUser(defaultUser));
+
+      expect(response.statusCode).toBe(403);
+    });
+  });
+
   afterAll(async () => {
     await app.close();
   });

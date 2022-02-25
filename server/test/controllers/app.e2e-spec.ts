@@ -3,6 +3,7 @@ import * as request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { User } from 'src/entities/user.entity';
+import { AuditLog } from 'src/entities/audit_log.entity';
 import { clearDB, createUser, createNestAppInstance, authHeaderForUser } from '../test.helper';
 import { OrganizationUser } from 'src/entities/organization_user.entity';
 
@@ -40,6 +41,18 @@ describe('Authentication', () => {
 
     expect(new Set(['all_users', 'admin'])).toEqual(new Set(groupNames));
 
+    // should create audit log
+    const auditLog = await AuditLog.findOne({
+      userId: user.id,
+    });
+
+    expect(auditLog.organizationId).toEqual(user.organizationId);
+    expect(auditLog.resourceId).toEqual(user.id);
+    expect(auditLog.resourceType).toEqual('USER');
+    expect(auditLog.resourceName).toEqual(user.email);
+    expect(auditLog.actionType).toEqual('USER_SIGNUP');
+    expect(auditLog.createdAt).toBeDefined();
+
     const adminGroup = groupPermissions.find((x) => x.group == 'admin');
     expect(adminGroup.appCreate).toBeTruthy();
     expect(adminGroup.appDelete).toBeTruthy();
@@ -56,6 +69,19 @@ describe('Authentication', () => {
       .post('/api/authenticate')
       .send({ email: 'admin@tooljet.io', password: 'password' })
       .expect(201);
+
+    const user = await User.findOne({ email: 'admin@tooljet.io' });
+    // should create audit log
+    const auditLog = await AuditLog.findOne({
+      userId: user.id,
+    });
+
+    expect(auditLog.organizationId).toEqual(user.organizationId);
+    expect(auditLog.resourceId).toEqual(user.id);
+    expect(auditLog.resourceType).toEqual('USER');
+    expect(auditLog.resourceName).toEqual(user.email);
+    expect(auditLog.actionType).toEqual('USER_LOGIN');
+    expect(auditLog.createdAt).toBeDefined();
   });
 
   it('throw 401 if user is archived', async () => {

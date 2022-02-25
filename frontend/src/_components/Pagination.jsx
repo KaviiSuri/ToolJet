@@ -1,6 +1,13 @@
 import React, { useMemo } from 'react';
 
-export const Pagination = function Pagination({ currentPage, count, pageChanged, itemsPerPage = 10, darkMode }) {
+export const Pagination = function Pagination({
+  currentPage,
+  count,
+  pageChanged,
+  itemsPerPage = 10,
+  queryParams = {},
+  darkMode,
+}) {
   const totalPages = useMemo(() => {
     return Math.floor((count - 1) / itemsPerPage) + 1;
   }, [count, itemsPerPage]);
@@ -22,7 +29,7 @@ export const Pagination = function Pagination({ currentPage, count, pageChanged,
   };
 
   function gotoPage(page) {
-    pageChanged(page);
+    pageChanged(page, itemsPerPage, queryParams);
   }
 
   function gotoFirstPage() {
@@ -41,11 +48,11 @@ export const Pagination = function Pagination({ currentPage, count, pageChanged,
     gotoPage(currentPage - 1);
   }
 
-  function startingAppCount() {
+  function startingCount() {
     return (currentPage - 1) * itemsPerPage + 1;
   }
 
-  function endingAppCount() {
+  function endingCount() {
     const num = currentPage * itemsPerPage;
 
     return num > count ? count : num;
@@ -54,7 +61,7 @@ export const Pagination = function Pagination({ currentPage, count, pageChanged,
   return (
     <div className="card-footer d-flex align-items-center px-1">
       <p className={`m-0 ${darkMode ? 'text-white-50' : 'text-muted'}`}>
-        Showing <span>{startingAppCount()}</span> to <span>{endingAppCount()}</span> of <span>{count}</span>
+        Showing <span>{startingCount()}</span> to <span>{endingCount()}</span> of <span>{count}</span>
       </p>
       <ul className="pagination m-0 ms-auto">
         <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
