@@ -11,7 +11,7 @@ export function useAutomerge(initialDoc, socket, appId) {
       console.log('-----start diff calculation----- ');
       const newDoc = Automerge.change(doc, message, updater);
       const changes = Automerge.getChanges(doc, newDoc);
-      console.log('-----start diff calculation-----');
+      console.log('-----stop diff calculation-----');
 
       const socketData = {
         data: changes,
@@ -37,9 +37,10 @@ export function useAutomerge(initialDoc, socket, appId) {
     (updatedDoc) => {
       let [newDoc] = Automerge.applyChanges(doc, updatedDoc);
       setDoc(newDoc);
+      return newDoc;
     },
     [doc]
   );
 
-  return [doc, updateDoc, mergeDoc];
+  return [updateDoc, mergeDoc];
 }

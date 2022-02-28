@@ -26,28 +26,15 @@ const MultiplayerEditor = (props) => {
     [updatePresence]
   );
 
-  const [doc, updateDoc, merge] = useAutomerge({}, socket);
+  const [updateDoc, mergeDoc] = useAutomerge({}, socket);
 
   React.useEffect(() => {
-    socket?.addEventListener('message', (event) => {
-      const data = JSON.parse(event.data);
-      if (data.message === 'appDefinitionChanged') {
-        try {
-          merge(data.data);
-        } catch (error) {
-          console.log(error);
-        }
-      }
-    });
-
     () => socket && socket?.close();
-  }, [merge, socket]);
-
-  // console.log(JSON.parse(JSON.stringify(doc)));
+  }, [socket]);
 
   return (
     <div onPointerMove={handlePointerMove}>
-      <Editor {...props} updateDoc={updateDoc} socket={socket} />
+      <Editor {...props} updateDoc={updateDoc} mergeDoc={mergeDoc} socket={socket} />
       {Object.keys(others).map((key) => {
         return (
           <Cursor

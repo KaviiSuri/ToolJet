@@ -202,6 +202,17 @@ class Editor extends React.Component {
   initEventListeners() {
     document.addEventListener('mousemove', this.onMouseMove);
     document.addEventListener('mouseup', this.onMouseUp);
+    this.props.socket?.addEventListener('message', (event) => {
+      const data = JSON.parse(event.data);
+      if (data.message === 'appDefinitionChanged') {
+        try {
+          const newDefinition = this.props.mergeDoc(data.data);
+          this.appDefinitionChanged(newDefinition);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    });
   }
 
   componentWillUnmount() {
@@ -497,7 +508,7 @@ class Editor extends React.Component {
 
   emitAppDefinitionChanged = (appDefinition) => {
     this.props.updateDoc((draft) => {
-      draft.newDoc = appDefinition;
+      draft = appDefinition;
     });
   };
 
