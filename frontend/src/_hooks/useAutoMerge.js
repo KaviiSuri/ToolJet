@@ -1,14 +1,12 @@
 import React from 'react';
 import Automerge from 'automerge';
-import { throttle } from 'lodash';
-const worker = new Worker('../_workers/automerge-worker.js');
 
 export function useAutomerge(initialDoc, socket, appId) {
   const [doc, setDoc] = React.useState(() =>
     Automerge.from(typeof initialDoc === 'function' ? initialDoc() : initialDoc)
   );
 
-  const throttled = throttle((updater, message) => {
+  const updateDoc = React.useCallback((updater, message) => {
     try {
       console.log('-----start diff calculation----- ');
       const newDoc = Automerge.change(doc, message, updater);
@@ -33,12 +31,7 @@ export function useAutomerge(initialDoc, socket, appId) {
       console.log('automerge-error', error);
       // TODO: send to sentry
     }
-  }, 4000);
-
-  const updateDoc = React.useCallback(
-    (updater, message) => worker.postMessage(throttled(updater, message)),
-    [throttled]
-  );
+  }, []);
 
   const mergeDoc = React.useCallback(
     (updatedDoc) => {
