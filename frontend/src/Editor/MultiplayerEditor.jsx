@@ -26,7 +26,7 @@ const MultiplayerEditor = (props) => {
     [updatePresence]
   );
 
-  const [updateDoc, mergeDoc] = useAutomerge({}, socket);
+  const [updateDoc, mergeDoc] = useAutomerge({}, socket, props.match.params.id);
 
   React.useEffect(() => {
     () => socket && socket?.close();

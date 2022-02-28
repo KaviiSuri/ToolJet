@@ -6,6 +6,8 @@ export function useAutomerge(initialDoc, socket, appId) {
     Automerge.from(typeof initialDoc === 'function' ? initialDoc() : initialDoc)
   );
 
+  const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
   const updateDoc = React.useCallback((updater, message) => {
     try {
       console.log('-----start diff calculation----- ');
@@ -14,13 +16,14 @@ export function useAutomerge(initialDoc, socket, appId) {
       console.log('-----stop diff calculation-----');
 
       const socketData = {
+        clientId: currentUser.id,
         data: changes,
+        appId,
         message: 'appDefinitionChanged',
       };
 
       socket.send(
         JSON.stringify({
-          appId,
           event: 'appDefinitionChanged',
           data: JSON.stringify(socketData),
         })
@@ -35,7 +38,8 @@ export function useAutomerge(initialDoc, socket, appId) {
 
   const mergeDoc = React.useCallback(
     (updatedDoc) => {
-      let [newDoc] = Automerge.applyChanges(doc, updatedDoc);
+      let newDoc = Automerge.applyChanges(doc, updatedDoc);
+      console.log(newDoc)
       setDoc(newDoc);
       return newDoc;
     },

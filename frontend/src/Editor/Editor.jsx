@@ -57,7 +57,7 @@ class Editor extends React.Component {
 
     const currentUser = authenticationService.currentUserValue;
 
-    const { socket } = createWebsocketConnection(appId);
+    const { socket } = !props.socket && createWebsocketConnection(appId);
 
     let userVars = {};
 
@@ -204,6 +204,7 @@ class Editor extends React.Component {
     document.addEventListener('mouseup', this.onMouseUp);
     this.props.socket?.addEventListener('message', (event) => {
       const data = JSON.parse(event.data);
+      console.log('222222', data)
       if (data.message === 'appDefinitionChanged') {
         try {
           const newDefinition = this.props.mergeDoc(data.data);
@@ -508,7 +509,8 @@ class Editor extends React.Component {
 
   emitAppDefinitionChanged = (appDefinition) => {
     this.props.updateDoc((draft) => {
-      draft = appDefinition;
+      draft.components = appDefinition.components;
+      draft.globalSettings = appDefinition.globalSettings;
     });
   };
 
@@ -1310,8 +1312,8 @@ class Editor extends React.Component {
               {currentSidebarTab === 1 && (
                 <div className="pages-container">
                   {selectedComponent &&
-                  !isEmpty(appDefinition.components) &&
-                  !isEmpty(appDefinition.components[selectedComponent.id]) ? (
+                    !isEmpty(appDefinition.components) &&
+                    !isEmpty(appDefinition.components[selectedComponent.id]) ? (
                     <Inspector
                       cloneComponent={this.cloneComponent}
                       componentDefinitionChanged={this.componentDefinitionChanged}
