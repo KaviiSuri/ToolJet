@@ -204,9 +204,10 @@ class Editor extends React.Component {
     document.addEventListener('mouseup', this.onMouseUp);
     this.props.socket?.addEventListener('message', (event) => {
       const data = JSON.parse(event.data);
-      console.log('222222', data)
+      console.log('222222', data);
       if (data.message === 'appDefinitionChanged') {
         try {
+          // eslint-disable-next-line no-undef
           const newDefinition = this.props.mergeDoc(data.data);
           this.appDefinitionChanged(newDefinition);
         } catch (error) {
@@ -1312,8 +1313,8 @@ class Editor extends React.Component {
               {currentSidebarTab === 1 && (
                 <div className="pages-container">
                   {selectedComponent &&
-                    !isEmpty(appDefinition.components) &&
-                    !isEmpty(appDefinition.components[selectedComponent.id]) ? (
+                  !isEmpty(appDefinition.components) &&
+                  !isEmpty(appDefinition.components[selectedComponent.id]) ? (
                     <Inspector
                       cloneComponent={this.cloneComponent}
                       componentDefinitionChanged={this.componentDefinitionChanged}
